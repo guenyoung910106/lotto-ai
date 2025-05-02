@@ -1,0 +1,71 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>AI 로또 번호 추천기</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; padding: 2em; }
+    h1 { font-size: 2em; }
+    .section { margin-top: 2em; }
+    table { margin: auto; border-collapse: collapse; }
+    td, th { border: 1px solid #888; padding: 10px 15px; font-size: 18px; }
+    button { margin-top: 1em; padding: 10px 20px; font-size: 16px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>🎯 AI 로또 번호 추천기 (중복 X + 41번 제외)</h1>
+
+  <div class="section">
+    <h2>✅ 추천 번호 (기존 당첨 조합 제외)</h2>
+    <button onclick="fetchAndGenerate()">🎲 번호 새로 추천하기</button>
+    <table id="numberTable"></table>
+  </div>
+
+  <script>
+    const excludedNumbers = [41];
+    let previousWinningCombinations = [];
+
+    function arraysEqual(a, b) {
+      const s1 = [...a].sort((x, y) => x - y);
+      const s2 = [...b].sort((x, y) => x - y);
+      return s1.every((v, i) => v === s2[i]);
+    }
+
+    function isDuplicate(combo) {
+      return previousWinningCombinations.some(prev => arraysEqual(prev, combo));
+    }
+
+    async function fetchAndGenerate() {
+      const res = await fetch("/api/winning-numbers");
+      previousWinningCombinations = await res.json();
+      generateUniqueNumbers();
+    }
+
+    function generateUniqueNumbers() {
+      const table = document.getElementById("numberTable");
+      table.innerHTML = "";
+
+      const candidates = Array.from({ length: 45 }, (_, i) => i + 1)
+        .filter(n => !excludedNumbers.includes(n));
+
+      let count = 0;
+      while (count < 5) {
+        const combo = [];
+        while (combo.length < 6) {
+          const r = candidates[Math.floor(Math.random() * candidates.length)];
+          if (!combo.includes(r)) combo.push(r);
+        }
+        combo.sort((a, b) => a - b);
+        if (!isDuplicate(combo)) {
+          const row = `<tr><td><b>추천 ${count + 1}</b></td>${combo.map(n => `<td>${n}</td>`).join("")}</tr>`;
+          table.innerHTML += row;
+          count++;
+        }
+      }
+    }
+
+    window.onload = fetchAndGenerate;
+  </script>
+</body>
+</html>
